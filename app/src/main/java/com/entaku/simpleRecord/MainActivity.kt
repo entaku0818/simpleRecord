@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun AppNavHost() {
     val navController = rememberNavController()
+    val context = LocalContext.current
 
     Scaffold { innerPadding ->
         NavHost(
@@ -38,7 +40,14 @@ fun AppNavHost() {
                 )
             }
             composable(Screen.Record.route) {
-                RecordScreen()
+                val viewModel = RecordViewModel()
+                val uiStateFlow = viewModel.uiState
+
+                RecordScreen(
+                    uiStateFlow = uiStateFlow,
+                    onStartRecording = { viewModel.startRecording(applicationContext = context) },
+                    onStopRecording = { viewModel.stopRecording() }
+                )
             }
         }
     }
