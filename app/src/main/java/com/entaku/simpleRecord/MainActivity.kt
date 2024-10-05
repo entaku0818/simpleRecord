@@ -1,20 +1,49 @@
 package com.entaku.simpleRecord
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        setContent {
+            AppNavHost()
         }
     }
+}
+
+@Composable
+fun AppNavHost() {
+    val navController = rememberNavController()
+
+    Scaffold { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Recordings.route,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable(Screen.Recordings.route) {
+                RecordingsScreen(
+                    onNavigateToRecordScreen = {
+                        navController.navigate(Screen.Record.route)
+                    }
+                )
+            }
+            composable(Screen.Record.route) {
+                RecordScreen()
+            }
+        }
+    }
+}
+sealed class Screen(val route: String, val title: String) {
+    object Recordings : Screen("recordings", "Recordings")
+    object Record : Screen("record", "Record")
 }
