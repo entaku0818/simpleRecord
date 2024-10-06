@@ -2,10 +2,12 @@ package com.entaku.simpleRecord.db
 
 import android.content.Context
 import androidx.room.*
+import kotlinx.coroutines.flow.Flow
+import java.util.UUID
 
 @Entity(tableName = "recordings")
 data class RecordingEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey val uuid: UUID,
     @ColumnInfo(name = "title") val title: String,
     @ColumnInfo(name = "creation_date") val creationDate: Long,
     @ColumnInfo(name = "file_extension") val fileExtension: String,
@@ -20,7 +22,8 @@ data class RecordingEntity(
 interface RecordingDao {
     @Insert
     suspend fun insert(recording: RecordingEntity)
-
+    @Query("SELECT * FROM recordings")
+    fun getAllRecordings(): Flow<List<RecordingEntity>>
 }
 
 @Database(entities = [RecordingEntity::class], version = 1)
