@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 data class RecordingData(
-    val uuid: UUID,
+    val uuid: UUID? = null,
     val title: String,
     val creationDate: LocalDateTime,
     val fileExtension: String,

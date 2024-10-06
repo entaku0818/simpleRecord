@@ -14,3 +14,15 @@ class RecordViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+
+class RecordingsViewModelFactory(
+    private val repository: RecordingRepository
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(RecordingsViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return RecordingsViewModel(repository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}

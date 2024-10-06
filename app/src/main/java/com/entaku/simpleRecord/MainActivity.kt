@@ -6,6 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,10 +38,19 @@ fun AppNavHost() {
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Recordings.route) {
+                val database = remember { AppDatabase.getInstance(context) }
+                val repository = remember { RecordingRepositoryImpl(database) }
+                val viewModelFactory = remember { RecordingsViewModelFactory(repository) }
+                val viewModel: RecordingsViewModel = viewModel(factory = viewModelFactory)
+
+                val state by viewModel.uiState.collectAsState()
+
                 RecordingsScreen(
+                    state = state,
                     onNavigateToRecordScreen = {
                         navController.navigate(Screen.Record.route)
-                    }
+                    },
+                    onRefresh = viewModel::loadRecordings
                 )
             }
             composable(Screen.Record.route) {

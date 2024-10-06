@@ -13,60 +13,54 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-
-
+import java.util.UUID
 
 
 @Composable
-fun RecordingsScreen(onNavigateToRecordScreen: () -> Unit) {
-    var recordings by remember {
-        mutableStateOf(
-            List(20) { // リストの件数を増やしました
-                RecordingData(
-                    title = "Recording ${it + 1}",
-                    creationDate = LocalDateTime.now().minusDays(it.toLong()),
-                    fileExtension = "wav",
-                    khz = "44",
-                    bitRate = 16,
-                    channels = 2,
-                    duration = "00:0${it + 1}:30",
-                    filePath = "/path/to/recording${it + 1}.wav"
-                )
-            }
-        )
+fun RecordingsScreen(
+    state: RecordingsUiState,
+    onNavigateToRecordScreen: () -> Unit,
+    onRefresh: () -> Unit
+) {
+
+    LaunchedEffect(key1 = Unit) {
+        onRefresh()
     }
 
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(16.dp)
-        ) {
-            items(recordings) { recording ->
-                RecordingListItem(recording)
-                Spacer(modifier = Modifier.height(8.dp))
+        if (state.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(alignment = Alignment.CenterHorizontally))
+        } else {
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                items(state.recordings) { recording ->
+                    RecordingListItem(
+                        recording = recording,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
         }
 
         Button(
-            onClick = {
-                onNavigateToRecordScreen()
-            },
+            onClick = onNavigateToRecordScreen,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
@@ -148,5 +142,29 @@ fun RecordingListItem(recording: RecordingData) {
 @Preview(showBackground = true)
 @Composable
 fun PreviewRecordingsScreen() {
-    RecordingsScreen(onNavigateToRecordScreen = {})
+    val sampleRecordings = List(5) { index ->
+        RecordingData(
+            uuid = UUID.randomUUID(),
+            title = "Recording ${index + 1}",
+            creationDate = LocalDateTime.now().minusDays(index.toLong()),
+            fileExtension = "wav",
+            khz = "44",
+            bitRate = 16,
+            channels = 2,
+            duration = "00:0${index + 1}:30",
+            filePath = "/path/to/recording${index + 1}.wav"
+        )
+    }
+
+    val sampleState = RecordingsUiState(
+        recordings = sampleRecordings,
+        isLoading = false,
+        error = null
+    )
+
+    RecordingsScreen(
+        state = sampleState,
+        onNavigateToRecordScreen = {},
+        onRefresh = {}
+    )
 }
