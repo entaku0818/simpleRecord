@@ -28,17 +28,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 
-// 録音データを持つデータクラス
-data class RecordingData(
-    val title: String,
-    val creationDate: LocalDateTime,
-    val fileExtension: String,
-    val khz: String,
-    val bitRate: Int,
-    val channels: Int,
-    val duration: String,
-    val filePath: String
-)
+
 
 @Composable
 fun RecordingsScreen(onNavigateToRecordScreen: () -> Unit) {
