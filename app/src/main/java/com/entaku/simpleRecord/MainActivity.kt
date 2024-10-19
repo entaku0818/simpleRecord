@@ -16,6 +16,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.entaku.simpleRecord.db.AppDatabase
+import com.entaku.simpleRecord.play.PlaybackScreen
+import com.entaku.simpleRecord.record.RecordScreen
+import com.entaku.simpleRecord.record.RecordViewModel
+import com.entaku.simpleRecord.record.RecordViewModelFactory
+import com.entaku.simpleRecord.record.RecordingRepositoryImpl
+import com.entaku.simpleRecord.record.RecordingsViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

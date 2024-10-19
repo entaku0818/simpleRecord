@@ -81,21 +81,26 @@ fun RecordingListItem(
     val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
     val formattedDate = recording.creationDate.format(formatter)
 
+    // Set a maximum length for the title and append ellipsis if it exceeds the limit
+    val maxTitleLength = 20
+    val shortenedTitle = if (recording.title.length > maxTitleLength) {
+        recording.title.take(maxTitleLength) + "..."
+    } else {
+        recording.title
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
-            .clickable { onItemClick() } ,
+            .clickable { onItemClick() },
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = recording.title,
+                    text = shortenedTitle, // Use the truncated title
                     style = MaterialTheme.typography.bodyLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -109,17 +114,16 @@ fun RecordingListItem(
 
             Spacer(modifier = Modifier.height(1.dp))
 
-            // 録音時間、ファイルの情報を表示
+            // Recording information display
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-
                 Text(
                     text = formattedDate,
                     style = MaterialTheme.typography.bodyMedium
                 )
-                Row(){
+                Row {
                     Text(
                         text = "${recording.khz} kHz",
                         style = MaterialTheme.typography.bodySmall
@@ -136,16 +140,15 @@ fun RecordingListItem(
                     )
                 }
 
-
                 Text(
                     text = recording.fileExtension.uppercase(),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
-
         }
     }
 }
+
 
 
 @Preview(showBackground = true)
@@ -154,7 +157,7 @@ fun PreviewRecordingsScreen() {
     val sampleRecordings = List(5) { index ->
         RecordingData(
             uuid = UUID.randomUUID(),
-            title = "Recording ${index + 1}",
+            title = "RecordingRecordingRecording ${index + 1}",
             creationDate = LocalDateTime.now().minusDays(index.toLong()),
             fileExtension = "wav",
             khz = "44",

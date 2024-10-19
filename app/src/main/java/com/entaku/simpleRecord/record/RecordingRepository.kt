@@ -1,6 +1,7 @@
-package com.entaku.simpleRecord
+package com.entaku.simpleRecord.record
 
 import android.util.Log
+import com.entaku.simpleRecord.RecordingData
 import com.entaku.simpleRecord.db.AppDatabase
 import com.entaku.simpleRecord.db.RecordingEntity
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +48,9 @@ class RecordingRepositoryImpl(private val database: AppDatabase) : RecordingRepo
     }
     override fun getAllRecordings(): Flow<List<RecordingData>> {
         return database.recordingDao().getAllRecordings().map { entities ->
-            entities.map { it.toRecordingData() }
+            entities
+                .map { it.toRecordingData() }
+                .sortedByDescending { it.creationDate }
         }
     }
 

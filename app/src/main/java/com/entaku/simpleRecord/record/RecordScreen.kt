@@ -1,4 +1,4 @@
-package com.entaku.simpleRecord
+package com.entaku.simpleRecord.record
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts

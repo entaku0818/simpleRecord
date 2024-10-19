@@ -1,4 +1,4 @@
-package com.entaku.simpleRecord
+package com.entaku.simpleRecord.record
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.Environment
+import com.entaku.simpleRecord.RecordingData
 import kotlinx.coroutines.flow.update
 import java.io.IOException
 import java.time.LocalDateTime
@@ -32,8 +33,8 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
     private val fileExtension = "3gp"
     private val outputFormat = MediaRecorder.OutputFormat.THREE_GPP
     private val audioEncoder = MediaRecorder.AudioEncoder.AMR_NB
-    private val sampleRate = 8000
-    private val bitRate = 12200
+    private val sampleRate = 44100
+    private val bitRate = 16
     private val channels = 1
 
     fun startRecording(applicationContext: Context) {

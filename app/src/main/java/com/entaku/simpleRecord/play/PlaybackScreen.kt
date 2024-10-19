@@ -1,4 +1,4 @@
-package com.entaku.simpleRecord
+package com.entaku.simpleRecord.play
 
 import android.media.MediaPlayer
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.entaku.simpleRecord.RecordingData
 import java.io.IOException
 
 @Composable

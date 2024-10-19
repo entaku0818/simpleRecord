@@ -1,7 +1,8 @@
-package com.entaku.simpleRecord
+package com.entaku.simpleRecord.record
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.entaku.simpleRecord.RecordingsViewModel
 
 class RecordViewModelFactory(
     private val repository: RecordingRepository
