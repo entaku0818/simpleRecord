@@ -30,6 +30,7 @@ class MainActivity : ComponentActivity() {
 fun AppNavHost() {
     val navController = rememberNavController()
     val context = LocalContext.current
+    val sharedViewModel: SharedRecordingsViewModel = viewModel()
 
     Scaffold { innerPadding ->
         NavHost(
@@ -50,7 +51,12 @@ fun AppNavHost() {
                     onNavigateToRecordScreen = {
                         navController.navigate(Screen.Record.route)
                     },
-                    onRefresh = viewModel::loadRecordings
+                    onRefresh = viewModel::loadRecordings,
+                    onNavigateToPlaybackScreen = { recordingData ->
+                        // Store the selected recording in the shared ViewModel
+                        sharedViewModel.selectRecording(recordingData)
+                        navController.navigate(Screen.Playback.route)
+                    }
                 )
             }
             composable(Screen.Record.route) {
@@ -67,7 +73,17 @@ fun AppNavHost() {
                     onNavigateBack = { navController.popBackStack() }
                 )
             }
+            composable(Screen.Playback.route) {
+                // Access the selected recording from the shared ViewModel
+                val selectedRecording by sharedViewModel.selectedRecording.collectAsState()
 
+                selectedRecording?.let { recordingData ->
+                    PlaybackScreen(
+                        recordingData = recordingData,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+            }
         }
     }
 }
@@ -75,4 +91,5 @@ fun AppNavHost() {
 sealed class Screen(val route: String, val title: String) {
     object Recordings : Screen("recordings", "Recordings")
     object Record : Screen("record", "Record")
+    object Playback : Screen("playback", "playback")
 }

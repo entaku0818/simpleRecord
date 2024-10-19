@@ -1,5 +1,6 @@
 package com.entaku.simpleRecord
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,7 +33,8 @@ import java.util.UUID
 fun RecordingsScreen(
     state: RecordingsUiState,
     onNavigateToRecordScreen: () -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onNavigateToPlaybackScreen: (RecordingData) -> Unit
 ) {
 
     LaunchedEffect(key1 = Unit) {
@@ -53,6 +55,7 @@ fun RecordingsScreen(
                 items(state.recordings) { recording ->
                     RecordingListItem(
                         recording = recording,
+                        onItemClick = { onNavigateToPlaybackScreen(recording) }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -71,12 +74,18 @@ fun RecordingsScreen(
 }
 
 @Composable
-fun RecordingListItem(recording: RecordingData) {
+fun RecordingListItem(
+    recording: RecordingData,
+    onItemClick: () -> Unit
+) {
     val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
     val formattedDate = recording.creationDate.format(formatter)
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .clickable { onItemClick() } ,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
@@ -165,6 +174,7 @@ fun PreviewRecordingsScreen() {
     RecordingsScreen(
         state = sampleState,
         onNavigateToRecordScreen = {},
-        onRefresh = {}
+        onRefresh = {},
+        onNavigateToPlaybackScreen = {}
     )
 }
