@@ -59,9 +59,11 @@ fun AppNavHost() {
                     },
                     onRefresh = viewModel::loadRecordings,
                     onNavigateToPlaybackScreen = { recordingData ->
-                        // Store the selected recording in the shared ViewModel
                         sharedViewModel.selectRecording(recordingData)
                         navController.navigate(Screen.Playback.route)
+                    },
+                    onDeleteClick = { uuid ->
+                        viewModel.deleteRecording(uuid)
                     }
                 )
             }

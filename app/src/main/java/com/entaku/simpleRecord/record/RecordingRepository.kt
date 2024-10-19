@@ -15,7 +15,7 @@ import java.util.UUID
 interface RecordingRepository {
     suspend fun saveRecordingData(recordingData: RecordingData)
     fun getAllRecordings(): Flow<List<RecordingData>>
-
+    suspend fun deleteRecording(uuid: UUID)
 }
 class RecordingRepositoryImpl(private val database: AppDatabase) : RecordingRepository {
     companion object {
@@ -53,6 +53,13 @@ class RecordingRepositoryImpl(private val database: AppDatabase) : RecordingRepo
                 .sortedByDescending { it.creationDate }
         }
     }
+
+    override suspend fun deleteRecording(uuid: UUID) {
+        withContext(Dispatchers.IO) {
+            database.recordingDao().delete(uuid)
+        }
+    }
+
 
     private fun RecordingEntity.toRecordingData(): RecordingData {
         return RecordingData(

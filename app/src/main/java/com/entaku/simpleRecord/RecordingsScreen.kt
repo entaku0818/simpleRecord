@@ -10,15 +10,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -34,7 +46,8 @@ fun RecordingsScreen(
     state: RecordingsUiState,
     onNavigateToRecordScreen: () -> Unit,
     onRefresh: () -> Unit,
-    onNavigateToPlaybackScreen: (RecordingData) -> Unit
+    onNavigateToPlaybackScreen: (RecordingData) -> Unit,
+    onDeleteClick: (UUID) -> Unit
 ) {
 
     LaunchedEffect(key1 = Unit) {
@@ -55,7 +68,9 @@ fun RecordingsScreen(
                 items(state.recordings) { recording ->
                     RecordingListItem(
                         recording = recording,
-                        onItemClick = { onNavigateToPlaybackScreen(recording) }
+                        onItemClick = { onNavigateToPlaybackScreen(recording) },
+                        onDeleteClick = { recording.uuid?.let { onDeleteClick(it) } },
+                        onEditNameClick = { }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -76,10 +91,15 @@ fun RecordingsScreen(
 @Composable
 fun RecordingListItem(
     recording: RecordingData,
-    onItemClick: () -> Unit
+    onItemClick: () -> Unit,
+    onDeleteClick: () -> Unit, // Action for delete
+    onEditNameClick: () -> Unit // Action for editing name
 ) {
     val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
     val formattedDate = recording.creationDate.format(formatter)
+
+    var expanded by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) } // ダイアログ表示状態
 
     // Set a maximum length for the title and append ellipsis if it exceeds the limit
     val maxTitleLength = 20
@@ -97,19 +117,53 @@ fun RecordingListItem(
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = shortenedTitle, // Use the truncated title
-                    style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                // Recording title and duration
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = shortenedTitle, // Use the truncated title
+                        style = MaterialTheme.typography.bodyLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = recording.duration,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
 
-                Text(
-                    text = recording.duration,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                IconButton(
+                    onClick = { expanded = true },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert, // メニュー用のアイコン
+                        contentDescription = "Menu", // アクセシビリティ用の説明
+                        modifier = Modifier.size(24.dp) // アイコン自体のサイズを指定
+                    )
+                }
+
+                // Dropdown menu
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    DropdownMenuItem(
+                        onClick = {
+                            expanded = false
+                            onEditNameClick() // Trigger edit action
+                        },
+                        text = { Text("Edit Name") }
+                    )
+                    DropdownMenuItem(
+                        onClick = {
+                            expanded = false
+                            showDeleteDialog = true // Show confirmation dialog
+                        },
+                        text = { Text("Delete") }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(1.dp))
@@ -147,6 +201,28 @@ fun RecordingListItem(
             }
         }
     }
+
+    // 削除確認用モーダルダイアログ
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("削除確認") },
+            text = { Text("本当に削除してもよろしいですか？") },
+            confirmButton = {
+                Button(onClick = {
+                    onDeleteClick() // 実際の削除アクションを呼び出し
+                    showDeleteDialog = false
+                }) {
+                    Text("はい")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDeleteDialog = false }) {
+                    Text("いいえ")
+                }
+            }
+        )
+    }
 }
 
 
@@ -178,6 +254,7 @@ fun PreviewRecordingsScreen() {
         state = sampleState,
         onNavigateToRecordScreen = {},
         onRefresh = {},
-        onNavigateToPlaybackScreen = {}
+        onNavigateToPlaybackScreen = {},
+        onDeleteClick = {}
     )
 }
