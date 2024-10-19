@@ -63,7 +63,8 @@ fun AppNavHost() {
                 RecordScreen(
                     uiStateFlow = uiStateFlow,
                     onStartRecording = { viewModel.startRecording(context) },
-                    onStopRecording = { viewModel.stopRecording() }
+                    onStopRecording = { viewModel.stopRecording() },
+                    onNavigateBack = { navController.popBackStack() }
                 )
             }
 

@@ -22,13 +22,21 @@ import androidx.core.content.PermissionChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import android.Manifest
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TopAppBar
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordScreen(
     uiStateFlow: StateFlow<RecordingUiState>,
     onStartRecording: () -> Unit,
-    onStopRecording: () -> Unit
+    onStopRecording: () -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     // StateFlow を collect してUIに反映
     val uiState by uiStateFlow.collectAsState()
@@ -64,6 +72,14 @@ fun RecordScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        TopAppBar(
+            title = { Text("Record") },
+            navigationIcon = {
+                IconButton(onClick = { onNavigateBack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                }
+            }
+        )
         Button(
             onClick = {
                 if (uiState.isRecording) {
@@ -88,7 +104,8 @@ fun PreviewRecordScreen() {
     RecordScreen(
         uiStateFlow = MutableStateFlow(RecordingUiState()),
         onStartRecording = {},
-        onStopRecording = {}
+        onStopRecording = {},
+        onNavigateBack = {}
     )
 }
 
