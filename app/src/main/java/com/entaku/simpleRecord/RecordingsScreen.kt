@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,7 +48,8 @@ fun RecordingsScreen(
     onNavigateToRecordScreen: () -> Unit,
     onRefresh: () -> Unit,
     onNavigateToPlaybackScreen: (RecordingData) -> Unit,
-    onDeleteClick: (UUID) -> Unit
+    onDeleteClick: (UUID) -> Unit,
+    onEditRecordingName: (UUID, String) -> Unit
 ) {
 
     LaunchedEffect(key1 = Unit) {
@@ -70,7 +72,9 @@ fun RecordingsScreen(
                         recording = recording,
                         onItemClick = { onNavigateToPlaybackScreen(recording) },
                         onDeleteClick = { recording.uuid?.let { onDeleteClick(it) } },
-                        onEditNameClick = { }
+                        onEditNameClick = { newTitle ->
+                            recording.uuid?.let { onEditRecordingName(it,newTitle) }
+                        }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -92,14 +96,15 @@ fun RecordingsScreen(
 fun RecordingListItem(
     recording: RecordingData,
     onItemClick: () -> Unit,
-    onDeleteClick: () -> Unit, // Action for delete
-    onEditNameClick: () -> Unit // Action for editing name
+    onDeleteClick: () -> Unit,
+    onEditNameClick: (String) -> Unit
 ) {
     val formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd")
     val formattedDate = recording.creationDate.format(formatter)
 
     var expanded by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) } // ダイアログ表示状態
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditNameDialog by remember { mutableStateOf(false) }
 
     // Set a maximum length for the title and append ellipsis if it exceeds the limit
     val maxTitleLength = 20
@@ -152,8 +157,8 @@ fun RecordingListItem(
                     DropdownMenuItem(
                         onClick = {
                             expanded = false
-                            onEditNameClick() // Trigger edit action
-                        },
+                            showEditNameDialog = true
+                                  },
                         text = { Text("Edit Name") }
                     )
                     DropdownMenuItem(
@@ -223,6 +228,55 @@ fun RecordingListItem(
             }
         )
     }
+
+    if (showEditNameDialog) {
+        EditNameDialog(
+            currentName = recording.title, // 現在の名前を表示
+            onConfirm = { newName ->
+                onEditNameClick(newName) // 新しい名前をコールバックで渡す
+            },
+            onDismiss = { showEditNameDialog = false } // ダイアログを閉じる
+        )
+    }
+}
+
+@Composable
+fun EditNameDialog(
+    currentName: String,
+    onConfirm: (String) -> Unit, // 新しい名前を渡すコールバック
+    onDismiss: () -> Unit // ダイアログを閉じるコールバック
+) {
+    var newName by remember { mutableStateOf(currentName) } // 新しい名前を保存する状態
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text("名前を編集") },
+        text = {
+            Column {
+                Text("新しい名前を入力してください")
+                Spacer(modifier = Modifier.height(8.dp))
+                TextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    label = { Text("名前") },
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                onConfirm(newName) // 新しい名前を返す
+                onDismiss() // ダイアログを閉じる
+            }) {
+                Text("保存")
+            }
+        },
+        dismissButton = {
+            Button(onClick = { onDismiss() }) {
+                Text("キャンセル")
+            }
+        }
+    )
 }
 
 
@@ -255,6 +309,8 @@ fun PreviewRecordingsScreen() {
         onNavigateToRecordScreen = {},
         onRefresh = {},
         onNavigateToPlaybackScreen = {},
-        onDeleteClick = {}
+        onDeleteClick = {},
+        onEditRecordingName = { a,b ->
+        }
     )
 }

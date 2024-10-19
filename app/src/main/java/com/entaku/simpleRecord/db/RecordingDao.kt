@@ -26,6 +26,8 @@ interface RecordingDao {
     fun getAllRecordings(): Flow<List<RecordingEntity>>
     @Query("DELETE FROM recordings WHERE uuid = :uuid")
     suspend fun delete(uuid: UUID)
+    @Query("UPDATE recordings SET title = :newTitle WHERE uuid = :uuid")
+    suspend fun updateTitle(uuid: UUID, newTitle: String)
 }
 
 @Database(entities = [RecordingEntity::class], version = 1)

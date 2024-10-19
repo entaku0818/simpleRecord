@@ -34,6 +34,13 @@ class RecordingsViewModel(
         }
     }
 
+    fun updateRecordingTitle(uuid: UUID, newTitle: String) {
+        viewModelScope.launch {
+            repository.updateRecordingTitle(uuid, newTitle)
+            loadRecordings()
+        }
+    }
+
 }
 
 data class RecordingsUiState(

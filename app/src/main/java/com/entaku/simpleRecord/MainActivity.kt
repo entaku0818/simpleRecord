@@ -64,6 +64,9 @@ fun AppNavHost() {
                     },
                     onDeleteClick = { uuid ->
                         viewModel.deleteRecording(uuid)
+                    },
+                    onEditRecordingName = { uuid,title ->
+                        viewModel.updateRecordingTitle(uuid,title)
                     }
                 )
             }
@@ -82,7 +85,6 @@ fun AppNavHost() {
                 )
             }
             composable(Screen.Playback.route) {
-                // Access the selected recording from the shared ViewModel
                 val selectedRecording by sharedViewModel.selectedRecording.collectAsState()
 
                 selectedRecording?.let { recordingData ->
