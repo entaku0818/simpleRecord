@@ -71,8 +71,6 @@ class PlaybackViewModel : ViewModel() {
                 _playbackState.value = _playbackState.value.copy(
                     currentPosition = position
                 )
-                Log.d("currentPosition", position.toString())
-                Log.e("currentPosition", mediaPlayer?.isPlaying.toString())
 
                 delay(100) // 100msごとに更新
             }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
@@ -11,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.entaku.simpleRecord.RecordingData
@@ -39,10 +41,11 @@ fun PlaybackScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         LinearProgressIndicator(
-            progress = { playbackState.currentPosition.toFloat() / recordingData.duration },
+            progress = { (playbackState.currentPosition.toFloat() / 1000) / (recordingData.duration.toFloat() ) },
             modifier = Modifier
                 .height(16.dp),
         )
+
 
         Text(text = "Time: ${playbackState.currentPosition / 1000} sec / ${recordingData.duration} sec")
 
@@ -74,7 +77,7 @@ fun PlaybackScreenPreview() {
 
     val dummyPlaybackState = PlaybackState(
         isPlaying = false,
-        currentPosition = 0
+        currentPosition = 10000
     )
 
     PlaybackScreen(
