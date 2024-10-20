@@ -1,6 +1,7 @@
 package com.entaku.simpleRecord.play
 
 import android.media.MediaPlayer
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,9 +32,9 @@ class PlaybackViewModel : ViewModel() {
                 setDataSource(filePath)
                 prepare()
             } catch (e: IOException) {
-                e.printStackTrace()
+                Log.e("MediaPlayer", "Failed to set data source", e)
             } catch (e: IllegalStateException) {
-                e.printStackTrace()
+                Log.e("MediaPlayer", "Illegal state during media preparation", e)
             }
         }
     }
@@ -43,42 +44,61 @@ class PlaybackViewModel : ViewModel() {
             if (_playbackState.value.isPlaying) {
                 it.pause()
                 stopUpdatingProgress()
+                Log.d("Playback", "Paused")
+                _playbackState.value = _playbackState.value.copy(isPlaying = false)
             } else {
-                it.start()
-                startUpdatingProgress()
+                try {
+                    it.start()
+                    Log.d("Playback", "Started")
+                    _playbackState.value = _playbackState.value.copy(isPlaying = true)
+
+                    // 進行状況の更新を開始
+                    startUpdatingProgress()
+                } catch (e: IllegalStateException) {
+                    Log.e("MediaPlayer", "Error starting playback", e)
+                }
             }
-            // isPlayingの状態を更新
-            _playbackState.value = _playbackState.value.copy(isPlaying = !_playbackState.value.isPlaying)
         }
     }
 
     private fun startUpdatingProgress() {
+        // すでにジョブが実行中の場合はキャンセル
+        updateJob?.cancel()
+
         updateJob = viewModelScope.launch {
             while (_playbackState.value.isPlaying) {
-                // currentPositionの状態を更新
+                val position = mediaPlayer?.currentPosition ?: 0
                 _playbackState.value = _playbackState.value.copy(
-                    currentPosition = mediaPlayer?.currentPosition ?: 0
+                    currentPosition = position
                 )
-                delay(100) // Update every 100ms
+                Log.d("currentPosition", position.toString())
+                Log.e("currentPosition", mediaPlayer?.isPlaying.toString())
+
+                delay(100) // 100msごとに更新
             }
         }
     }
 
     private fun stopUpdatingProgress() {
         updateJob?.cancel()
+        updateJob = null
     }
 
     fun stopPlayback() {
         mediaPlayer?.let {
-            if (it.isPlaying) {
-                it.stop()
+            try {
+                if (it.isPlaying) {
+                    it.stop()
+                }
+                it.reset()
+                it.release()
+            } catch (e: IllegalStateException) {
+                Log.e("MediaPlayer", "Error stopping media player", e)
+            } finally {
+                mediaPlayer = null
             }
-            it.reset()
-            it.release()
-            mediaPlayer = null
         }
         stopUpdatingProgress()
-        // 再生停止時に状態をリセット
         _playbackState.value = _playbackState.value.copy(
             isPlaying = false,
             currentPosition = 0
