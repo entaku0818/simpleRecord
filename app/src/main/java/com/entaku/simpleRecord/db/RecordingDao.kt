@@ -14,7 +14,7 @@ data class RecordingEntity(
     @ColumnInfo(name = "khz") val khz: String,
     @ColumnInfo(name = "bit_rate") val bitRate: Int,
     @ColumnInfo(name = "channels") val channels: Int,
-    @ColumnInfo(name = "duration") val duration: String,
+    @ColumnInfo(name = "duration") val duration: Long,
     @ColumnInfo(name = "file_path") val filePath: String
 )
 

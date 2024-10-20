@@ -1,45 +1,30 @@
 package com.entaku.simpleRecord.play
 
-import android.media.MediaPlayer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.entaku.simpleRecord.RecordingData
-import java.io.IOException
+import java.time.LocalDateTime
+import java.util.UUID
 
 @Composable
 fun PlaybackScreen(
     recordingData: RecordingData, // Accept RecordingData
-    onNavigateBack: () -> Unit
+    playbackState: PlaybackState, // PlaybackStateを渡す
+    onPlayPause: () -> Unit, // 再生/一時停止を制御する関数
+    onStop: () -> Unit, // 再生停止を制御する関数
+    onNavigateBack: () -> Unit // ナビゲーションバックを制御する関数
 ) {
-    val context = LocalContext.current
-    var isPlaying by remember { mutableStateOf(false) }
-    val mediaPlayer = remember { MediaPlayer() }
-
-    // Setup MediaPlayer
-    LaunchedEffect(key1 = recordingData.filePath) {
-        try {
-            mediaPlayer.setDataSource(recordingData.filePath)
-            mediaPlayer.prepare()
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-    }
-
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -47,29 +32,57 @@ fun PlaybackScreen(
     ) {
         Text(text = "Playing: ${recordingData.title}")
 
-        Button(onClick = {
-            if (isPlaying) {
-                mediaPlayer.pause()
-            } else {
-                mediaPlayer.start()
-            }
-            isPlaying = !isPlaying
-        }) {
-            Text(text = if (isPlaying) "Pause" else "Play")
+        Button(onClick = { onPlayPause() }) {
+            Text(text = if (playbackState.isPlaying) "Pause" else "Play")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(text = "Duration: ${recordingData.duration}")
+        LinearProgressIndicator(
+            progress = { playbackState.currentPosition.toFloat() / recordingData.duration },
+            modifier = Modifier
+                .height(16.dp),
+        )
+
+        Text(text = "Time: ${playbackState.currentPosition / 1000} sec / ${recordingData.duration} sec")
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            mediaPlayer.stop()
-            mediaPlayer.release()
+            onStop()
             onNavigateBack()
         }) {
             Text(text = "Back to Recordings")
         }
     }
 }
+
+@Preview(showBackground = true)
+@Composable
+fun PlaybackScreenPreview() {
+    val dummyRecordingData = RecordingData(
+        uuid = UUID.randomUUID(),
+        title = "Sample Recording",
+        creationDate = LocalDateTime.now(),
+        fileExtension = ".mp3",
+        khz = "44.1",
+        bitRate = 128,
+        channels = 2,
+        duration = 120, // Assuming duration in seconds
+        filePath = "dummy/path/to/audio/file.mp3"
+    )
+
+    val dummyPlaybackState = PlaybackState(
+        isPlaying = false,
+        currentPosition = 0
+    )
+
+    PlaybackScreen(
+        recordingData = dummyRecordingData,
+        playbackState = dummyPlaybackState, // PlaybackStateを渡す
+        onPlayPause = { /* handle play/pause */ },
+        onStop = { /* handle stop */ },
+        onNavigateBack = {}
+    )
+}
+

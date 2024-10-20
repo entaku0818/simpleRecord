@@ -85,7 +85,7 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
                 khz = sampleRate.toString(),
                 bitRate = bitRate,
                 channels = channels,
-                duration = formatDuration(duration),
+                duration = duration.seconds,
                 filePath = filePath
             )
 

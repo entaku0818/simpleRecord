@@ -134,7 +134,7 @@ fun RecordingListItem(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = recording.duration,
+                        text = "${recording.duration}",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -293,7 +293,7 @@ fun PreviewRecordingsScreen() {
             khz = "44",
             bitRate = 16,
             channels = 2,
-            duration = "00:0${index + 1}:30",
+            duration = 120,
             filePath = "/path/to/recording${index + 1}.wav"
         )
     }

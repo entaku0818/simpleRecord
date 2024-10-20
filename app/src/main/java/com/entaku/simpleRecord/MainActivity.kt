@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.entaku.simpleRecord.db.AppDatabase
 import com.entaku.simpleRecord.play.PlaybackScreen
+import com.entaku.simpleRecord.play.PlaybackViewModel
 import com.entaku.simpleRecord.record.RecordScreen
 import com.entaku.simpleRecord.record.RecordViewModel
 import com.entaku.simpleRecord.record.RecordViewModelFactory
@@ -86,12 +87,23 @@ fun AppNavHost() {
             }
             composable(Screen.Playback.route) {
                 val selectedRecording by sharedViewModel.selectedRecording.collectAsState()
+                val playbackViewModel: PlaybackViewModel = viewModel()
+                val playbackState by playbackViewModel.playbackState.collectAsState()
 
                 selectedRecording?.let { recordingData ->
+                    playbackViewModel.setupMediaPlayer(recordingData.filePath)
+
                     PlaybackScreen(
                         recordingData = recordingData,
-                        onNavigateBack = { navController.popBackStack() }
-                    )
+                        playbackState = playbackState,
+                        onStop = {
+                            playbackViewModel.stopPlayback()
+                        },
+                        onPlayPause = {
+                            playbackViewModel.playOrPause()
+                        },
+                        onNavigateBack = { navController.popBackStack() },
+                        )
                 }
             }
         }

@@ -11,6 +11,6 @@ data class RecordingData(
     val khz: String,
     val bitRate: Int,
     val channels: Int,
-    val duration: String,
+    val duration: Long,
     val filePath: String
 )
