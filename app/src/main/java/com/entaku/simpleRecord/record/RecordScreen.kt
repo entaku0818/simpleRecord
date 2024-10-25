@@ -122,19 +122,7 @@ fun RecordScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = when (uiState.recordingState) {
-                        RecordingState.RECORDING -> "Recording in progress..."
-                        RecordingState.IDLE -> "Ready to record"
-                        RecordingState.ERROR -> "Recording failed. Please try again."
-                        RecordingState.FINISHED -> "Recording saved successfully!"
-                    },
-                    color = when (uiState.recordingState) {
-                        RecordingState.ERROR -> MaterialTheme.colorScheme.error
-                        RecordingState.FINISHED -> MaterialTheme.colorScheme.primary
-                        else -> MaterialTheme.colorScheme.onSurface
-                    }
-                )
+
 
                 if (uiState.recordingState == RecordingState.RECORDING) {
                     Column(
