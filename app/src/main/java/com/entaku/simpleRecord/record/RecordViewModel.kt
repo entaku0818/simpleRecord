@@ -11,14 +11,16 @@ import android.os.Build
 import android.os.Environment
 import com.entaku.simpleRecord.RecordingData
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import java.io.IOException
 import java.time.LocalDateTime
 import java.time.Duration
 
-
 data class RecordingUiState(
     val isRecording: Boolean = false,
-    val currentFilePath: String? = null
+    val currentFilePath: String? = null,
+    val currentVolume: Int = 0  // 音量を追加
 )
 
 class RecordViewModel(private val repository: RecordingRepository) : ViewModel() {
@@ -28,6 +30,7 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
 
     private var mediaRecorder: MediaRecorder? = null
     private var startTime: Long = 0
+    private var volumeMonitorJob: Job? = null
 
     // 録音設定パラメータ
     private val fileExtension = "3gp"
@@ -55,6 +58,7 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
                 start()
                 startTime = System.currentTimeMillis()
                 _uiState.update { it.copy(isRecording = true, currentFilePath = outputFile) }
+                startVolumeMonitoring()  // 音量モニタリングを開始
             } catch (e: IOException) {
                 e.printStackTrace()
                 _uiState.update { it.copy(isRecording = false, currentFilePath = null) }
@@ -62,7 +66,31 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
         }
     }
 
+    private fun startVolumeMonitoring() {
+        volumeMonitorJob?.cancel()
+        volumeMonitorJob = viewModelScope.launch {
+            while (true) {
+                mediaRecorder?.let { recorder ->
+                    try {
+                        // maxAmplitude は 0 〜 32767 の範囲の値を返す
+                        val amplitude = recorder.maxAmplitude
+                        // 0-100の範囲に正規化
+                        val normalizedVolume = (amplitude.toFloat() / 32767.0f * 100).toInt().coerceIn(0, 100)
+                        _uiState.update { it.copy(currentVolume = normalizedVolume) }
+                    } catch (e: IllegalStateException) {
+                        // recorder が stopped や released の状態では例外が発生する可能性がある
+                        e.printStackTrace()
+                    }
+                }
+                delay(100) // 100ms ごとに更新
+            }
+        }
+    }
+
     fun stopRecording() {
+        volumeMonitorJob?.cancel()  // 音量モニタリングを停止
+        volumeMonitorJob = null
+
         mediaRecorder?.apply {
             try {
                 stop()
@@ -94,7 +122,13 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
             }
         }
 
-        _uiState.update { it.copy(isRecording = false, currentFilePath = null) }
+        _uiState.update {
+            it.copy(
+                isRecording = false,
+                currentFilePath = null,
+                currentVolume = 0  // 音量をリセット
+            )
+        }
     }
 
     private fun formatDuration(duration: Duration): String {
@@ -115,6 +149,7 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
 
     override fun onCleared() {
         super.onCleared()
+        volumeMonitorJob?.cancel()  // ViewModel破棄時にジョブをキャンセル
         mediaRecorder?.release()
         mediaRecorder = null
     }

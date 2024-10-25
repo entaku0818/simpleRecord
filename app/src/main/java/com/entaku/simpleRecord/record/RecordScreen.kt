@@ -1,14 +1,26 @@
 package com.entaku.simpleRecord.record
 
+import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -21,13 +33,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import android.Manifest
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.TopAppBar
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,63 +43,95 @@ fun RecordScreen(
     onStopRecording: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    // StateFlow を collect してUIに反映
     val uiState by uiStateFlow.collectAsState()
-
     val context = LocalContext.current
 
-    // パーミッションリクエスト用のランチャー
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { granted ->
             if (granted) {
-                onStartRecording() // 許可が下りたら録音開始
+                onStartRecording()
             }
         }
     )
 
-    // 録音開始時にパーミッションチェックとリクエスト
     fun checkPermissionAndStartRecording() {
         when (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)) {
             PermissionChecker.PERMISSION_GRANTED -> {
-                // すでに許可されていれば録音を開始
                 onStartRecording()
             }
             else -> {
-                // 許可されていなければリクエストを表示
                 permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             }
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        TopAppBar(
-            title = { Text("Record") },
-            navigationIcon = {
-                IconButton(onClick = { onNavigateBack() }) {
-                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Record") },
+                navigationIcon = {
+                    IconButton(onClick = { onNavigateBack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
                 }
-            }
-        )
-        Button(
-            onClick = {
-                if (uiState.isRecording) {
-                    onStopRecording()
-                } else {
-                    checkPermissionAndStartRecording()
-                }
-            }
-        ) {
-            Text(if (uiState.isRecording) "Stop Recording" else "Start Recording")
+            )
         }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Button(
+                    onClick = {
+                        if (uiState.isRecording) {
+                            onStopRecording()
+                        } else {
+                            checkPermissionAndStartRecording()
+                        }
+                    }
+                ) {
+                    Text(if (uiState.isRecording) "Stop Recording" else "Start Recording")
+                }
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-        Text(if (uiState.isRecording) "Recording in progress..." else "Ready to record")
+
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    Text(
+                        text = "Volume: ${uiState.currentVolume}%",
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    LinearProgressIndicator(
+                        progress = { uiState.currentVolume / 100f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp),
+                        color = when {
+                            uiState.currentVolume > 80 -> androidx.compose.material3.MaterialTheme.colorScheme.error
+                            uiState.currentVolume > 60 -> androidx.compose.material3.MaterialTheme.colorScheme.tertiary
+                            else -> androidx.compose.material3.MaterialTheme.colorScheme.primary
+                        },
+                        trackColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
+                    )
+                }
+
+            }
+        }
     }
 }
 
