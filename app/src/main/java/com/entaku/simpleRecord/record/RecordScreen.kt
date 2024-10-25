@@ -18,10 +18,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -45,6 +47,13 @@ fun RecordScreen(
 ) {
     val uiState by uiStateFlow.collectAsState()
     val context = LocalContext.current
+
+    // FINISHED 状態を検知して onNavigateBack を実行
+    LaunchedEffect(uiState.recordingState) {
+        if (uiState.recordingState == RecordingState.FINISHED) {
+            onNavigateBack()
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -92,44 +101,66 @@ fun RecordScreen(
             ) {
                 Button(
                     onClick = {
-                        if (uiState.isRecording) {
-                            onStopRecording()
-                        } else {
-                            checkPermissionAndStartRecording()
+                        when (uiState.recordingState) {
+                            RecordingState.RECORDING -> onStopRecording()
+                            RecordingState.IDLE -> checkPermissionAndStartRecording()
+                            RecordingState.ERROR -> checkPermissionAndStartRecording()
+                            RecordingState.FINISHED -> {}  // 何もしない
                         }
-                    }
+                    },
+                    enabled = uiState.recordingState != RecordingState.FINISHED
                 ) {
-                    Text(if (uiState.isRecording) "Stop Recording" else "Start Recording")
+                    Text(
+                        when (uiState.recordingState) {
+                            RecordingState.RECORDING -> "Stop Recording"
+                            RecordingState.IDLE -> "Start Recording"
+                            RecordingState.ERROR -> "Retry Recording"
+                            RecordingState.FINISHED -> "Finishing..."
+                        }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                Text(
+                    text = when (uiState.recordingState) {
+                        RecordingState.RECORDING -> "Recording in progress..."
+                        RecordingState.IDLE -> "Ready to record"
+                        RecordingState.ERROR -> "Recording failed. Please try again."
+                        RecordingState.FINISHED -> "Recording saved successfully!"
+                    },
+                    color = when (uiState.recordingState) {
+                        RecordingState.ERROR -> MaterialTheme.colorScheme.error
+                        RecordingState.FINISHED -> MaterialTheme.colorScheme.primary
+                        else -> MaterialTheme.colorScheme.onSurface
+                    }
+                )
 
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                ) {
-                    Text(
-                        text = "Volume: ${uiState.currentVolume}%",
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    LinearProgressIndicator(
-                        progress = { uiState.currentVolume / 100f },
+                if (uiState.recordingState == RecordingState.RECORDING) {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(8.dp),
-                        color = when {
-                            uiState.currentVolume > 80 -> androidx.compose.material3.MaterialTheme.colorScheme.error
-                            uiState.currentVolume > 60 -> androidx.compose.material3.MaterialTheme.colorScheme.tertiary
-                            else -> androidx.compose.material3.MaterialTheme.colorScheme.primary
-                        },
-                        trackColor = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                }
+                            .padding(horizontal = 16.dp)
+                    ) {
+                        Text(
+                            text = "Volume: ${uiState.currentVolume}%",
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
 
+                        LinearProgressIndicator(
+                            progress = { uiState.currentVolume / 100f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp),
+                            color = when {
+                                uiState.currentVolume > 80 -> MaterialTheme.colorScheme.error
+                                uiState.currentVolume > 60 -> MaterialTheme.colorScheme.tertiary
+                                else -> MaterialTheme.colorScheme.primary
+                            },
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                    }
+                }
             }
         }
     }
