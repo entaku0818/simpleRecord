@@ -35,6 +35,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.time.Duration
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -99,6 +100,14 @@ fun RecordScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+
+                if (uiState.recordingState == RecordingState.RECORDING) {
+                    Text(
+                        text = formatTime(uiState.elapsedTime),
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                }
                 Button(
                     onClick = {
                         when (uiState.recordingState) {
@@ -153,7 +162,11 @@ fun RecordScreen(
         }
     }
 }
-
+private fun formatTime(duration: Duration): String {
+    val minutes = duration.toMinutes()
+    val remainingSeconds = duration.seconds % 60
+    return String.format("%02d:%02d", minutes, remainingSeconds)
+}
 @Preview(showBackground = true)
 @Composable
 fun PreviewRecordScreen() {

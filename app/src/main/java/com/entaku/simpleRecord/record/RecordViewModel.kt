@@ -28,7 +28,8 @@ enum class RecordingState {
 data class RecordingUiState(
     val recordingState: RecordingState = RecordingState.IDLE,
     val currentFilePath: String? = null,
-    val currentVolume: Int = 0
+    val currentVolume: Int = 0,
+    val elapsedTime: Duration = Duration.ZERO
 )
 
 class RecordViewModel(private val repository: RecordingRepository) : ViewModel() {
@@ -48,6 +49,20 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
     private val bitRate = 16
     private val channels = 1
 
+    private var timeUpdateJob: Job? = null
+
+    private fun startTimeUpdates() {
+        timeUpdateJob?.cancel()
+        timeUpdateJob = viewModelScope.launch {
+            while (true) {
+                val currentTime = System.currentTimeMillis()
+                val elapsed = Duration.ofMillis(currentTime - startTime)
+                _uiState.update { it.copy(elapsedTime = elapsed) }
+                delay(1000) // 1秒ごとに更新
+            }
+        }
+    }
+
     fun startRecording(applicationContext: Context) {
         val externalFilesDir = applicationContext.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
         val fileName = "recording_${System.currentTimeMillis()}"
@@ -65,8 +80,13 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
                 prepare()
                 start()
                 startTime = System.currentTimeMillis()
-                _uiState.update { it.copy(recordingState = RecordingState.RECORDING, currentFilePath = outputFile) }
+                _uiState.update { it.copy(
+                    recordingState = RecordingState.RECORDING,
+                    currentFilePath = outputFile,
+                    elapsedTime = Duration.ZERO
+                ) }
                 startVolumeMonitoring()
+                startTimeUpdates() // 時間更新を開始
             } catch (e: IOException) {
                 e.printStackTrace()
             }
@@ -92,6 +112,8 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
     }
 
     fun stopRecording() {
+        timeUpdateJob?.cancel()
+        timeUpdateJob = null
         volumeMonitorJob?.cancel()
         volumeMonitorJob = null
 
@@ -131,7 +153,8 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
             it.copy(
                 recordingState = RecordingState.FINISHED,
                 currentFilePath = null,
-                currentVolume = 0
+                currentVolume = 0,
+                elapsedTime = Duration.ZERO
             )
         }
     }
