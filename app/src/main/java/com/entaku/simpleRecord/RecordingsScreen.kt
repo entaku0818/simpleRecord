@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -20,8 +19,10 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -52,7 +53,8 @@ fun RecordingsScreen(
     onRefresh: () -> Unit,
     onNavigateToPlaybackScreen: (RecordingData) -> Unit,
     onDeleteClick: (UUID) -> Unit,
-    onEditRecordingName: (UUID, String) -> Unit
+    onEditRecordingName: (UUID, String) -> Unit,
+    colorScheme: ColorScheme
 ) {
 
     LaunchedEffect(key1 = Unit) {
@@ -88,7 +90,13 @@ fun RecordingsScreen(
             onClick = onNavigateToRecordScreen,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorScheme.primary,
+                contentColor = colorScheme.onPrimary,
+                disabledContainerColor = colorScheme.surfaceVariant,
+                disabledContentColor = colorScheme.onSurfaceVariant
+            )
         ) {
             Text(text = "Start Recording")
         }
@@ -358,6 +366,7 @@ fun PreviewRecordingsScreen() {
         onNavigateToPlaybackScreen = {},
         onDeleteClick = {},
         onEditRecordingName = { a,b ->
-        }
+        },
+        colorScheme = LightColorScheme
     )
 }

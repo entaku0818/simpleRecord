@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,72 +41,81 @@ fun AppNavHost() {
     val context = LocalContext.current
     val sharedViewModel: SharedRecordingsViewModel = viewModel()
 
-    Scaffold { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = Screen.Recordings.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            composable(Screen.Recordings.route) {
-                val database = remember { AppDatabase.getInstance(context) }
-                val repository = remember { RecordingRepositoryImpl(database) }
-                val viewModelFactory = remember { RecordingsViewModelFactory(repository) }
-                val viewModel: RecordingsViewModel = viewModel(factory = viewModelFactory)
+    MaterialTheme(
+        colorScheme = LightColorScheme,
+        typography = Typography
+    ) {
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = Screen.Recordings.route,
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable(Screen.Recordings.route) {
+                    val database = remember { AppDatabase.getInstance(context) }
+                    val repository = remember { RecordingRepositoryImpl(database) }
+                    val viewModelFactory = remember { RecordingsViewModelFactory(repository) }
+                    val viewModel: RecordingsViewModel = viewModel(factory = viewModelFactory)
 
-                val state by viewModel.uiState.collectAsState()
+                    val state by viewModel.uiState.collectAsState()
+                    val colorScheme = MaterialTheme.colorScheme
 
-                RecordingsScreen(
-                    state = state,
-                    onNavigateToRecordScreen = {
-                        navController.navigate(Screen.Record.route)
-                    },
-                    onRefresh = viewModel::loadRecordings,
-                    onNavigateToPlaybackScreen = { recordingData ->
-                        sharedViewModel.selectRecording(recordingData)
-                        navController.navigate(Screen.Playback.route)
-                    },
-                    onDeleteClick = { uuid ->
-                        viewModel.deleteRecording(uuid)
-                    },
-                    onEditRecordingName = { uuid,title ->
-                        viewModel.updateRecordingTitle(uuid,title)
-                    }
-                )
-            }
-            composable(Screen.Record.route) {
-                val database = remember { AppDatabase.getInstance(context) }
-                val repository = remember { RecordingRepositoryImpl(database) }
-                val viewModelFactory = remember { RecordViewModelFactory(repository) }
-                val viewModel: RecordViewModel = viewModel(factory = viewModelFactory)
-                val uiStateFlow = viewModel.uiState
-
-                RecordScreen(
-                    uiStateFlow = uiStateFlow,
-                    onStartRecording = { viewModel.startRecording(context) },
-                    onStopRecording = { viewModel.stopRecording() },
-                    onNavigateBack = { navController.popBackStack() }
-                )
-            }
-            composable(Screen.Playback.route) {
-                val selectedRecording by sharedViewModel.selectedRecording.collectAsState()
-                val playbackViewModel: PlaybackViewModel = viewModel()
-                val playbackState by playbackViewModel.playbackState.collectAsState()
-
-                selectedRecording?.let { recordingData ->
-                    LaunchedEffect(recordingData.filePath) {
-                        playbackViewModel.setupMediaPlayer(recordingData.filePath)
-                    }
-                    PlaybackScreen(
-                        recordingData = recordingData,
-                        playbackState = playbackState,
-                        onStop = {
-                            playbackViewModel.stopPlayback()
+                    RecordingsScreen(
+                        state = state,
+                        onNavigateToRecordScreen = {
+                            navController.navigate(Screen.Record.route)
                         },
-                        onPlayPause = {
-                            playbackViewModel.playOrPause()
+                        onRefresh = viewModel::loadRecordings,
+                        onNavigateToPlaybackScreen = { recordingData ->
+                            sharedViewModel.selectRecording(recordingData)
+                            navController.navigate(Screen.Playback.route)
                         },
-                        onNavigateBack = { navController.popBackStack() },
+                        onDeleteClick = { uuid ->
+                            viewModel.deleteRecording(uuid)
+                        },
+                        onEditRecordingName = { uuid,title ->
+                            viewModel.updateRecordingTitle(uuid,title)
+                        },
+                        colorScheme = colorScheme
+                    )
+                }
+                composable(Screen.Record.route) {
+                    val database = remember { AppDatabase.getInstance(context) }
+                    val repository = remember { RecordingRepositoryImpl(database) }
+                    val viewModelFactory = remember { RecordViewModelFactory(repository) }
+                    val viewModel: RecordViewModel = viewModel(factory = viewModelFactory)
+                    val uiStateFlow = viewModel.uiState
+
+                    RecordScreen(
+                        uiStateFlow = uiStateFlow,
+                        onStartRecording = { viewModel.startRecording(context) },
+                        onStopRecording = { viewModel.stopRecording() },
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+                composable(Screen.Playback.route) {
+                    val selectedRecording by sharedViewModel.selectedRecording.collectAsState()
+                    val playbackViewModel: PlaybackViewModel = viewModel()
+                    val playbackState by playbackViewModel.playbackState.collectAsState()
+
+                    selectedRecording?.let { recordingData ->
+                        LaunchedEffect(recordingData.filePath) {
+                            playbackViewModel.setupMediaPlayer(recordingData.filePath)
+                        }
+                        PlaybackScreen(
+                            recordingData = recordingData,
+                            playbackState = playbackState,
+                            onStop = {
+                                playbackViewModel.stopPlayback()
+                            },
+                            onPlayPause = {
+                                playbackViewModel.playOrPause()
+                            },
+                            onNavigateBack = { navController.popBackStack() }
                         )
+                    }
                 }
             }
         }
