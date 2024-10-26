@@ -2,6 +2,7 @@ package com.entaku.simpleRecord
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -107,7 +110,7 @@ fun RecordingListItem(
     var showEditNameDialog by remember { mutableStateOf(false) }
 
     // Set a maximum length for the title and append ellipsis if it exceeds the limit
-    val maxTitleLength = 20
+    val maxTitleLength = 30
     val shortenedTitle = if (recording.title.length > maxTitleLength) {
         recording.title.take(maxTitleLength) + "..."
     } else {
@@ -119,94 +122,138 @@ fun RecordingListItem(
             .fillMaxWidth()
             .clickable { onItemClick() },
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Recording title and duration
-                Column(modifier = Modifier.weight(1f)) {
+                // Left side content
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // Title
                     Text(
-                        text = shortenedTitle, // Use the truncated title
+                        text = shortenedTitle,
                         style = MaterialTheme.typography.bodyLarge,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    Text(
-                        text = "${recording.duration}",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Date and Recording specs
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = formattedDate,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        // Recording specs
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${recording.khz} kHz",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "•",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${recording.bitRate} bit",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "•",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "${recording.channels} ch",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Text(
+                            text = recording.fileExtension.uppercase(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
-                IconButton(
-                    onClick = { expanded = true },
+                // Right side content
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.MoreVert, // メニュー用のアイコン
-                        contentDescription = "Menu", // アクセシビリティ用の説明
-                        modifier = Modifier.size(24.dp) // アイコン自体のサイズを指定
-                    )
-                }
-
-                // Dropdown menu
-                DropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    DropdownMenuItem(
-                        onClick = {
-                            expanded = false
-                            showEditNameDialog = true
-                                  },
-                        text = { Text("Edit Name") }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            expanded = false
-                            showDeleteDialog = true // Show confirmation dialog
-                        },
-                        text = { Text("Delete") }
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(1.dp))
-
-            // Recording information display
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = formattedDate,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Row {
                     Text(
-                        text = "${recording.khz} kHz",
-                        style = MaterialTheme.typography.bodySmall
+                        text = recording.duration.formatTime(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text(text = "/")
-                    Text(
-                        text = "${recording.bitRate} bit",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Text(text = "/")
-                    Text(
-                        text = "${recording.channels} ch",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
 
-                Text(
-                    text = recording.fileExtension.uppercase(),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                    Box {
+                        IconButton(
+                            onClick = { expanded = true }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                onClick = {
+                                    expanded = false
+                                    showEditNameDialog = true
+                                },
+                                text = { Text("Edit Name") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+                            DropdownMenuItem(
+                                onClick = {
+                                    expanded = false
+                                    showDeleteDialog = true
+                                },
+                                text = { Text("Delete") },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
             }
         }
     }
-
     // 削除確認用モーダルダイアログ
     if (showDeleteDialog) {
         AlertDialog(

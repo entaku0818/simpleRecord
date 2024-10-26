@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
+import com.entaku.simpleRecord.formatTime
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.time.Duration
@@ -103,7 +104,7 @@ fun RecordScreen(
 
                 if (uiState.recordingState == RecordingState.RECORDING) {
                     Text(
-                        text = formatTime(uiState.elapsedTime),
+                        text = uiState.elapsedTime.formatTime(),
                         style = MaterialTheme.typography.headlineMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
@@ -162,11 +163,7 @@ fun RecordScreen(
         }
     }
 }
-private fun formatTime(duration: Duration): String {
-    val minutes = duration.toMinutes()
-    val remainingSeconds = duration.seconds % 60
-    return String.format("%02d:%02d", minutes, remainingSeconds)
-}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewRecordScreen() {
