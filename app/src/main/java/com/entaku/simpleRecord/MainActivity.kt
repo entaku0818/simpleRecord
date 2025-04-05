@@ -25,6 +25,8 @@ import com.entaku.simpleRecord.record.RecordViewModel
 import com.entaku.simpleRecord.record.RecordViewModelFactory
 import com.entaku.simpleRecord.record.RecordingRepositoryImpl
 import com.entaku.simpleRecord.record.RecordingsViewModelFactory
+import com.entaku.simpleRecord.settings.RecordingSettingsScreen
+import com.entaku.simpleRecord.settings.SettingsManager
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,7 +86,8 @@ fun AppNavHost() {
                 composable(Screen.Record.route) {
                     val database = remember { AppDatabase.getInstance(context) }
                     val repository = remember { RecordingRepositoryImpl(database) }
-                    val viewModelFactory = remember { RecordViewModelFactory(repository) }
+                    val settingsManager = remember { SettingsManager(context) }
+                    val viewModelFactory = remember { RecordViewModelFactory(repository, settingsManager) }
                     val viewModel: RecordViewModel = viewModel(factory = viewModelFactory)
                     val uiStateFlow = viewModel.uiState
 
@@ -92,7 +95,10 @@ fun AppNavHost() {
                         uiStateFlow = uiStateFlow,
                         onStartRecording = { viewModel.startRecording(context) },
                         onStopRecording = { viewModel.stopRecording() },
-                        onNavigateBack = { navController.popBackStack() }
+                        onPauseRecording = { viewModel.pauseRecording() },
+                        onResumeRecording = { viewModel.resumeRecording() },
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToSettings = { navController.navigate(Screen.RecordingSettings.route) }
                     )
                 }
                 composable(Screen.Playback.route) {
@@ -117,6 +123,19 @@ fun AppNavHost() {
                         )
                     }
                 }
+                
+                composable(Screen.RecordingSettings.route) {
+                    val settingsManager = remember { SettingsManager(context) }
+                    val currentSettings = remember { settingsManager.getRecordingSettings() }
+                    
+                    RecordingSettingsScreen(
+                        currentSettings = currentSettings,
+                        onSettingsChanged = { newSettings ->
+                            settingsManager.saveRecordingSettings(newSettings)
+                        },
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }
@@ -125,5 +144,6 @@ fun AppNavHost() {
 sealed class Screen(val route: String, val title: String) {
     object Recordings : Screen("recordings", "Recordings")
     object Record : Screen("record", "Record")
-    object Playback : Screen("playback", "playback")
+    object Playback : Screen("playback", "Playback")
+    object RecordingSettings : Screen("recording_settings", "Recording Settings")
 }

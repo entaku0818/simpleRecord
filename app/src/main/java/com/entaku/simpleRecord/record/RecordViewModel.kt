@@ -10,6 +10,8 @@ import android.media.MediaRecorder
 import android.os.Build
 import android.os.Environment
 import com.entaku.simpleRecord.RecordingData
+import com.entaku.simpleRecord.settings.RecordingSettings
+import com.entaku.simpleRecord.settings.SettingsManager
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,6 +23,7 @@ import java.time.Duration
 enum class RecordingState {
     IDLE,      // 録音準備完了
     RECORDING, // 録音中
+    PAUSED,    // 録音一時停止中
     ERROR,
     FINISHED
 }
@@ -32,7 +35,10 @@ data class RecordingUiState(
     val elapsedTime: Duration = Duration.ZERO
 )
 
-class RecordViewModel(private val repository: RecordingRepository) : ViewModel() {
+class RecordViewModel(
+    private val repository: RecordingRepository,
+    private val settingsManager: SettingsManager
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RecordingUiState())
     val uiState: StateFlow<RecordingUiState> = _uiState
@@ -40,14 +46,12 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
     private var mediaRecorder: MediaRecorder? = null
     private var startTime: Long = 0
     private var volumeMonitorJob: Job? = null
+    private var pausedTime: Long = 0
 
-    // 録音設定パラメータ
-    private val fileExtension = "3gp"
-    private val outputFormat = MediaRecorder.OutputFormat.THREE_GPP
-    private val audioEncoder = MediaRecorder.AudioEncoder.AMR_NB
-    private val sampleRate = 44100
-    private val bitRate = 16
-    private val channels = 1
+    // 録音設定パラメータを取得
+    private fun getRecordingSettings(): RecordingSettings {
+        return settingsManager.getRecordingSettings()
+    }
 
     private var timeUpdateJob: Job? = null
 
@@ -64,17 +68,18 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
     }
 
     fun startRecording(applicationContext: Context) {
+        val settings = getRecordingSettings()
         val externalFilesDir = applicationContext.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
         val fileName = "recording_${System.currentTimeMillis()}"
-        val outputFile = "${externalFilesDir?.absolutePath}/$fileName.$fileExtension"
+        val outputFile = "${externalFilesDir?.absolutePath}/$fileName.${settings.fileExtension}"
 
         mediaRecorder = createMediaRecorder(applicationContext).apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(outputFormat)
-            setAudioEncoder(audioEncoder)
-            setAudioSamplingRate(sampleRate)
-            setAudioEncodingBitRate(bitRate)
-            setAudioChannels(channels)
+            setOutputFormat(settings.outputFormat)
+            setAudioEncoder(settings.audioEncoder)
+            setAudioSamplingRate(settings.sampleRate)
+            setAudioEncodingBitRate(settings.bitRate)
+            setAudioChannels(settings.channels)
             setOutputFile(outputFile)
             try {
                 prepare()
@@ -133,13 +138,14 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
         val duration = Duration.ofMillis(endTime - startTime)
 
         _uiState.value.currentFilePath?.let { filePath ->
+            val settings = getRecordingSettings()
             val recordingData = RecordingData(
                 title = "Recording ${LocalDateTime.now()}",
                 creationDate = LocalDateTime.now(),
-                fileExtension = fileExtension,
-                khz = sampleRate.toString(),
-                bitRate = bitRate,
-                channels = channels,
+                fileExtension = settings.fileExtension,
+                khz = settings.sampleRate.toString(),
+                bitRate = settings.bitRate,
+                channels = settings.channels,
                 duration = duration.seconds,
                 filePath = filePath
             )
@@ -175,9 +181,33 @@ class RecordViewModel(private val repository: RecordingRepository) : ViewModel()
         }
     }
 
+    fun pauseRecording() {
+        if (uiState.value.recordingState == RecordingState.RECORDING) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                mediaRecorder?.pause()
+                pausedTime = System.currentTimeMillis()
+                volumeMonitorJob?.cancel()
+                timeUpdateJob?.cancel()
+                _uiState.update { it.copy(recordingState = RecordingState.PAUSED) }
+            }
+        }
+    }
+
+    fun resumeRecording() {
+        if (uiState.value.recordingState == RecordingState.PAUSED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                mediaRecorder?.resume()
+                startVolumeMonitoring()
+                startTimeUpdates()
+                _uiState.update { it.copy(recordingState = RecordingState.RECORDING) }
+            }
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         volumeMonitorJob?.cancel()
+        timeUpdateJob?.cancel()
         mediaRecorder?.release()
         mediaRecorder = null
     }

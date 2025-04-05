@@ -3,14 +3,16 @@ package com.entaku.simpleRecord.record
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.entaku.simpleRecord.RecordingsViewModel
+import com.entaku.simpleRecord.settings.SettingsManager
 
 class RecordViewModelFactory(
-    private val repository: RecordingRepository
+    private val repository: RecordingRepository,
+    private val settingsManager: SettingsManager
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(RecordViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return RecordViewModel(repository) as T
+            return RecordViewModel(repository, settingsManager) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

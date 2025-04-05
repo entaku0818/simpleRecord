@@ -6,13 +6,19 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,7 +51,10 @@ fun RecordScreen(
     uiStateFlow: StateFlow<RecordingUiState>,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
-    onNavigateBack: () -> Unit
+    onPauseRecording: () -> Unit,
+    onResumeRecording: () -> Unit,
+    onNavigateBack: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     val uiState by uiStateFlow.collectAsState()
     val context = LocalContext.current
@@ -85,6 +94,11 @@ fun RecordScreen(
                     IconButton(onClick = { onNavigateBack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    IconButton(onClick = { onNavigateToSettings() }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
                 }
             )
         }
@@ -102,32 +116,94 @@ fun RecordScreen(
                 verticalArrangement = Arrangement.Center
             ) {
 
-                if (uiState.recordingState == RecordingState.RECORDING) {
+                if (uiState.recordingState == RecordingState.RECORDING || 
+                    uiState.recordingState == RecordingState.PAUSED) {
                     Text(
                         text = uiState.elapsedTime.formatTime(),
                         style = MaterialTheme.typography.headlineMedium,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
-                }
-                Button(
-                    onClick = {
-                        when (uiState.recordingState) {
-                            RecordingState.RECORDING -> onStopRecording()
-                            RecordingState.IDLE -> checkPermissionAndStartRecording()
-                            RecordingState.ERROR -> checkPermissionAndStartRecording()
-                            RecordingState.FINISHED -> {}  // 何もしない
+                    
+                    // 録音中または一時停止中の場合、コントロールボタンを表示
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 一時停止/再開ボタン
+                        Button(
+                            onClick = {
+                                if (uiState.recordingState == RecordingState.RECORDING) {
+                                    onPauseRecording()
+                                } else {
+                                    onResumeRecording()
+                                }
+                            },
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    if (uiState.recordingState == RecordingState.RECORDING) 
+                                        Icons.Default.Pause 
+                                    else 
+                                        Icons.Default.PlayArrow,
+                                    contentDescription = if (uiState.recordingState == RecordingState.RECORDING) 
+                                        "Pause" 
+                                    else 
+                                        "Resume"
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    if (uiState.recordingState == RecordingState.RECORDING) 
+                                        "Pause" 
+                                    else 
+                                        "Resume"
+                                )
+                            }
                         }
-                    },
-                    enabled = uiState.recordingState != RecordingState.FINISHED
-                ) {
-                    Text(
-                        when (uiState.recordingState) {
-                            RecordingState.RECORDING -> "Stop Recording"
-                            RecordingState.IDLE -> "Start Recording"
-                            RecordingState.ERROR -> "Retry Recording"
-                            RecordingState.FINISHED -> "Finishing..."
+                        
+                        // 停止ボタン
+                        Button(
+                            onClick = { onStopRecording() },
+                            modifier = Modifier.padding(start = 8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Stop,
+                                    contentDescription = "Stop"
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Stop")
+                            }
                         }
-                    )
+                    }
+                } else {
+                    // 録音開始ボタン
+                    Button(
+                        onClick = {
+                            when (uiState.recordingState) {
+                                RecordingState.IDLE -> checkPermissionAndStartRecording()
+                                RecordingState.ERROR -> checkPermissionAndStartRecording()
+                                else -> {}  // 何もしない
+                            }
+                        },
+                        enabled = uiState.recordingState != RecordingState.FINISHED
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.PlayArrow,
+                                contentDescription = "Start Recording"
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Start Recording")
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -171,7 +247,9 @@ fun PreviewRecordScreen() {
         uiStateFlow = MutableStateFlow(RecordingUiState()),
         onStartRecording = {},
         onStopRecording = {},
-        onNavigateBack = {}
+        onPauseRecording = {},
+        onResumeRecording = {},
+        onNavigateBack = {},
+        onNavigateToSettings = {}
     )
 }
-
