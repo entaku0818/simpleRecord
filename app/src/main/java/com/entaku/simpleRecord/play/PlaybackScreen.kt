@@ -1,14 +1,8 @@
 package com.entaku.simpleRecord.play
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -19,11 +13,12 @@ import java.util.UUID
 
 @Composable
 fun PlaybackScreen(
-    recordingData: RecordingData, // Accept RecordingData
-    playbackState: PlaybackState, // PlaybackStateを渡す
-    onPlayPause: () -> Unit, // 再生/一時停止を制御する関数
-    onStop: () -> Unit, // 再生停止を制御する関数
-    onNavigateBack: () -> Unit // ナビゲーションバックを制御する関数
+    recordingData: RecordingData,
+    playbackState: PlaybackState,
+    onPlayPause: () -> Unit,
+    onStop: () -> Unit,
+    onNavigateBack: () -> Unit,
+    onSpeedChange: (Float) -> Unit
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -32,18 +27,29 @@ fun PlaybackScreen(
     ) {
         Text(text = "Playing: ${recordingData.title}")
 
-        Button(onClick = { onPlayPause() }) {
+        // 再生速度選択
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SpeedButton(speed = 0.5f, currentSpeed = playbackState.playbackSpeed, onSpeedChange = onSpeedChange)
+            SpeedButton(speed = 1.0f, currentSpeed = playbackState.playbackSpeed, onSpeedChange = onSpeedChange)
+            SpeedButton(speed = 1.5f, currentSpeed = playbackState.playbackSpeed, onSpeedChange = onSpeedChange)
+            SpeedButton(speed = 2.0f, currentSpeed = playbackState.playbackSpeed, onSpeedChange = onSpeedChange)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(onClick = onPlayPause) {
             Text(text = if (playbackState.isPlaying) "Pause" else "Play")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
         LinearProgressIndicator(
-            progress = { (playbackState.currentPosition.toFloat() / 1000) / (recordingData.duration.toFloat() ) },
-            modifier = Modifier
-                .height(16.dp),
+            progress = { (playbackState.currentPosition.toFloat() / 1000) / (recordingData.duration.toFloat()) },
+            modifier = Modifier.height(16.dp),
         )
-
 
         Text(text = "Time: ${playbackState.currentPosition / 1000} sec / ${recordingData.duration} sec")
 
@@ -58,6 +64,22 @@ fun PlaybackScreen(
     }
 }
 
+@Composable
+fun SpeedButton(
+    speed: Float,
+    currentSpeed: Float,
+    onSpeedChange: (Float) -> Unit
+) {
+    Button(
+        onClick = { onSpeedChange(speed) },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (speed == currentSpeed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+        )
+    ) {
+        Text(text = "${speed}x")
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PlaybackScreenPreview() {
@@ -69,21 +91,23 @@ fun PlaybackScreenPreview() {
         khz = "44.1",
         bitRate = 128,
         channels = 2,
-        duration = 120, // Assuming duration in seconds
+        duration = 120,
         filePath = "dummy/path/to/audio/file.mp3"
     )
 
     val dummyPlaybackState = PlaybackState(
         isPlaying = false,
-        currentPosition = 10000
+        currentPosition = 10000,
+        playbackSpeed = 1.0f
     )
 
     PlaybackScreen(
         recordingData = dummyRecordingData,
-        playbackState = dummyPlaybackState, // PlaybackStateを渡す
-        onPlayPause = { /* handle play/pause */ },
-        onStop = { /* handle stop */ },
-        onNavigateBack = {}
+        playbackState = dummyPlaybackState,
+        onPlayPause = { },
+        onStop = { },
+        onNavigateBack = { },
+        onSpeedChange = { }
     )
 }
 

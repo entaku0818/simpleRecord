@@ -1,11 +1,13 @@
 package com.entaku.simpleRecord.play
 
 import android.media.MediaPlayer
+import android.media.PlaybackParams
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -14,7 +16,8 @@ import java.io.IOException
 // Playbackの状態をまとめたデータクラス
 data class PlaybackState(
     val isPlaying: Boolean = false,
-    val currentPosition: Int = 0
+    val currentPosition: Int = 0,
+    val playbackSpeed: Float = 1.0f
 )
 
 class PlaybackViewModel : ViewModel() {
@@ -39,18 +42,39 @@ class PlaybackViewModel : ViewModel() {
         }
     }
 
+    fun setPlaybackSpeed(speed: Float) {
+        mediaPlayer?.let {
+            try {
+                val params = PlaybackParams().apply {
+                    this.speed = speed
+                    pitch = 1.0f // ピッチは変更しない
+                }
+                it.playbackParams = params
+                _playbackState.update { currentState ->
+                    currentState.copy(playbackSpeed = speed)
+                }
+            } catch (e: IllegalStateException) {
+                Log.e("MediaPlayer", "Error setting playback speed", e)
+            }
+        }
+    }
+
     fun playOrPause() {
         mediaPlayer?.let {
             if (_playbackState.value.isPlaying) {
                 it.pause()
                 stopUpdatingProgress()
                 Log.d("Playback", "Paused")
-                _playbackState.value = _playbackState.value.copy(isPlaying = false)
+                _playbackState.update { currentState ->
+                    currentState.copy(isPlaying = false)
+                }
             } else {
                 try {
                     it.start()
                     Log.d("Playback", "Started")
-                    _playbackState.value = _playbackState.value.copy(isPlaying = true)
+                    _playbackState.update { currentState ->
+                        currentState.copy(isPlaying = true)
+                    }
 
                     // 進行状況の更新を開始
                     startUpdatingProgress()
@@ -68,10 +92,9 @@ class PlaybackViewModel : ViewModel() {
         updateJob = viewModelScope.launch {
             while (_playbackState.value.isPlaying) {
                 val position = mediaPlayer?.currentPosition ?: 0
-                _playbackState.value = _playbackState.value.copy(
-                    currentPosition = position
-                )
-
+                _playbackState.update { currentState ->
+                    currentState.copy(currentPosition = position)
+                }
                 delay(100) // 100msごとに更新
             }
         }
@@ -97,10 +120,12 @@ class PlaybackViewModel : ViewModel() {
             }
         }
         stopUpdatingProgress()
-        _playbackState.value = _playbackState.value.copy(
-            isPlaying = false,
-            currentPosition = 0
-        )
+        _playbackState.update { currentState ->
+            currentState.copy(
+                isPlaying = false,
+                currentPosition = 0
+            )
+        }
     }
 
     override fun onCleared() {

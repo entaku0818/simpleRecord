@@ -124,7 +124,10 @@ fun AppNavHost() {
                             onPlayPause = {
                                 playbackViewModel.playOrPause()
                             },
-                            onNavigateBack = { navController.popBackStack() }
+                            onNavigateBack = { navController.popBackStack() },
+                            onSpeedChange = { speed ->
+                                playbackViewModel.setPlaybackSpeed(speed)
+                            }
                         )
                     }
                 }
