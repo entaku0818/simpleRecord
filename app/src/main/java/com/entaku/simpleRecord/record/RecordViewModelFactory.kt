@@ -3,6 +3,7 @@ package com.entaku.simpleRecord.record
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.entaku.simpleRecord.RecordingsViewModel
+import com.entaku.simpleRecord.SharedRecordingsViewModel
 import com.entaku.simpleRecord.settings.SettingsManager
 
 class RecordViewModelFactory(
