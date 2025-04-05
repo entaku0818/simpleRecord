@@ -96,8 +96,20 @@ fun RecordScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { onNavigateToSettings() }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    IconButton(
+                        onClick = { onNavigateToSettings() },
+                        enabled = uiState.recordingState != RecordingState.RECORDING && 
+                                 uiState.recordingState != RecordingState.PAUSED
+                    ) {
+                        Icon(
+                            Icons.Default.Settings, 
+                            contentDescription = "Settings",
+                            tint = if (uiState.recordingState != RecordingState.RECORDING && 
+                                      uiState.recordingState != RecordingState.PAUSED)
+                                MaterialTheme.colorScheme.onSurface
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
                     }
                 }
             )

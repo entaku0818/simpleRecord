@@ -37,11 +37,17 @@ data class RecordingUiState(
 
 class RecordViewModel(
     private val repository: RecordingRepository,
-    private val settingsManager: SettingsManager
+    private val settingsManager: SettingsManager,
+    private val sharedViewModel: SharedRecordingsViewModel
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RecordingUiState())
     val uiState: StateFlow<RecordingUiState> = _uiState
+    
+    init {
+        // 初期状態をSharedViewModelに設定
+        sharedViewModel.updateRecordingState(RecordingState.IDLE)
+    }
 
     private var mediaRecorder: MediaRecorder? = null
     private var startTime: Long = 0
@@ -90,6 +96,8 @@ class RecordViewModel(
                     currentFilePath = outputFile,
                     elapsedTime = Duration.ZERO
                 ) }
+                // SharedViewModelの状態を更新
+                sharedViewModel.updateRecordingState(RecordingState.RECORDING)
                 startVolumeMonitoring()
                 startTimeUpdates() // 時間更新を開始
             } catch (e: IOException) {
@@ -163,6 +171,8 @@ class RecordViewModel(
                 elapsedTime = Duration.ZERO
             )
         }
+        // SharedViewModelの状態を更新
+        sharedViewModel.updateRecordingState(RecordingState.FINISHED)
     }
 
     private fun formatDuration(duration: Duration): String {
@@ -189,6 +199,8 @@ class RecordViewModel(
                 volumeMonitorJob?.cancel()
                 timeUpdateJob?.cancel()
                 _uiState.update { it.copy(recordingState = RecordingState.PAUSED) }
+                // SharedViewModelの状態を更新
+                sharedViewModel.updateRecordingState(RecordingState.PAUSED)
             }
         }
     }
@@ -200,6 +212,8 @@ class RecordViewModel(
                 startVolumeMonitoring()
                 startTimeUpdates()
                 _uiState.update { it.copy(recordingState = RecordingState.RECORDING) }
+                // SharedViewModelの状態を更新
+                sharedViewModel.updateRecordingState(RecordingState.RECORDING)
             }
         }
     }

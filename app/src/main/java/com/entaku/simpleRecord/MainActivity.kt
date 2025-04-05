@@ -87,7 +87,7 @@ fun AppNavHost() {
                     val database = remember { AppDatabase.getInstance(context) }
                     val repository = remember { RecordingRepositoryImpl(database) }
                     val settingsManager = remember { SettingsManager(context) }
-                    val viewModelFactory = remember { RecordViewModelFactory(repository, settingsManager) }
+                    val viewModelFactory = remember { RecordViewModelFactory(repository, settingsManager, sharedViewModel) }
                     val viewModel: RecordViewModel = viewModel(factory = viewModelFactory)
                     val uiStateFlow = viewModel.uiState
 
@@ -98,7 +98,12 @@ fun AppNavHost() {
                         onPauseRecording = { viewModel.pauseRecording() },
                         onResumeRecording = { viewModel.resumeRecording() },
                         onNavigateBack = { navController.popBackStack() },
-                        onNavigateToSettings = { navController.navigate(Screen.RecordingSettings.route) }
+                        onNavigateToSettings = { 
+                            // 録音中またはポーズ中でなければ設定画面に遷移
+                            if (!sharedViewModel.isRecordingOrPaused()) {
+                                navController.navigate(Screen.RecordingSettings.route)
+                            }
+                        }
                     )
                 }
                 composable(Screen.Playback.route) {
@@ -125,16 +130,23 @@ fun AppNavHost() {
                 }
                 
                 composable(Screen.RecordingSettings.route) {
-                    val settingsManager = remember { SettingsManager(context) }
-                    val currentSettings = remember { settingsManager.getRecordingSettings() }
-                    
-                    RecordingSettingsScreen(
-                        currentSettings = currentSettings,
-                        onSettingsChanged = { newSettings ->
-                            settingsManager.saveRecordingSettings(newSettings)
-                        },
-                        onNavigateBack = { navController.popBackStack() }
-                    )
+                    // 録音中またはポーズ中なら録音画面に戻る
+                    if (sharedViewModel.isRecordingOrPaused()) {
+                        LaunchedEffect(Unit) {
+                            navController.popBackStack()
+                        }
+                    } else {
+                        val settingsManager = remember { SettingsManager(context) }
+                        val currentSettings = remember { settingsManager.getRecordingSettings() }
+                        
+                        RecordingSettingsScreen(
+                            currentSettings = currentSettings,
+                            onSettingsChanged = { newSettings ->
+                                settingsManager.saveRecordingSettings(newSettings)
+                            },
+                            onNavigateBack = { navController.popBackStack() }
+                        )
+                    }
                 }
             }
         }
